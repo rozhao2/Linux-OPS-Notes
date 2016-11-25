@@ -1,0 +1,28 @@
+##0x01 记录用户命令
+将以下代码粘贴进入/etc/profile目录
+    USER_IP=`who -u am i 2>/dev/null | awk '{print $NF}' | sed -e 's/[()]//g'`
+    HISTORY_DIR=/var/log/.history
+    if [ -z $USER_IP ]
+    then
+        USER_IP=`hostname`
+    fi
+    if [ ! -d $HISTORY_DIR/${LOGNAME} ]
+    then
+        mkdir -p $HISTORY_DIR/${LOGNAME}
+        chmod 300 $HISTORY_DIR/${LOGNAME}
+    fi
+    
+    export HISTSIZE=4000
+    DT=`date +%Y%m%d_%H%M%S`
+    export HISTFILE="$HISTORY_DIR/${LOGNAME}/${USER_IP}.history.$DT"
+    export HISTTIMEFORMAT="[%Y-%m-%d %H:%M:%S]"
+    chmod 600 $HISTORY_DIR/${LOGNAME}/*.history* 2>/dev/null
+再用root用户（或者有权限的用户）创建历史保存目录
+    mkdir /var/log/.history
+    chmod 777 /var/log/.history
+退出登录，再登录进来以后，history命令可以看到类似于以下输出：
+    1  [2016-11-26 05:53:21]mkdir /usr/share/.history
+    2  [2016-11-26 05:53:50]vim /etc/profile
+    3  [2016-11-26 05:58:56]history 
+在/var/log/.history/自己的用户名/目录下会出现类似于172.18.21.20.history.20161125_231354这样的文件，记录了命令历史，只有su用户才能查看
+
