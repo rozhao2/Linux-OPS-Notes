@@ -1,0 +1,40 @@
+##0x01-hostname
+搞Linux，接触最多的一定是hostname了吧，自以为很熟练了解，其实还有很多看似冷僻的知识。
+
+###如何修改hostname
+
+hostname是一个内核参数，在/proc/sys/kernel/hostname里，你可以直接echo testserver > /proc/sys/kernel/hostname修改它。
+其实hostname testserver就是做同样的事情, sysctl命令修改这个内核参数也是做同样的事情。
+
+这只是暂时修改的，那么系统启动时，是从哪里获取hostname呢? 
+
+CentOS7以下，在/etc/sysconfig/network文件中，配置上HOSTNAME=testserver1，即可永久修改成testserver1. 当然，你要重启后生效，
+因为内核参数中还是原来的hostname。
+
+CentOS7开始，在/etc/hostname文件中，而且你修改这个文件，会自动更新内核参数，所以不需要重启就能生效了。
+
+当然CentOS7下不是说必须修改这个文件来修改hostname的，用hostnamectl set-hostname testserver1命令修改hostname
+
+
+###hostname的一些可能冷僻的知识
+
+* hostname最多多长？shell中执行getconf HOST_NAME_MAX会告诉你最多能设置的hostname的字节数，请注意，这是字节数。一般是64，所以用一般可见的ascii字符就是64个字符
+postfix规范只可以不超过255个字节。完整的主机名还是要带域名的，比如centos.test.com，用点分开的部分都不能超过HOST_NAME_MAX，但是加起来还是不能超过255
+* 为什么强调字节数？难道还用用非ascii字符设置hostname的吗？是滴。。。
+    
+        Linux的hostname分为三类：static, transient和pretty
+        static表示管理员分配的主机名
+        transient在类似于DHCP这种服务的分配个主机名
+        pretty表示是去过好看点的名字，pretty嘛。。可爱点，比如海棠朵朵？
+        centos7中的hostnamectl set-hostname testserver1 --pretty 可以指定设置哪种hostname
+
+* hostname可以用哪些字符？
+
+        又涉及到hostname的类型了，我们绝大多数用的就是static hostname，那static hostname可以用哪些字符呢？
+        事实上，没什么强制规定。。。
+        比如经常有朋友用host_name这样的，事实上，根据RFC952给出的规定：A "name" (Net, Host, Gateway, or Domain name) is a text string up
+        to 24 characters drawn from the alphabet (A-Z), digits (0-9), minus sign (-), and period (.)
+        所以我们最好不要用下划线了，用字符，数字，减号和点吧。
+        如果有写程序是设置hostname的，不让用正则表达式校验一下，提示一下违反了RFC952约定。
+
+        
