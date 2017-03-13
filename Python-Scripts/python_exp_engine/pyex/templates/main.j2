@@ -1,0 +1,37 @@
+
+# modify hostname
+hostname {{hostname}}
+sed -i 's/^HOSTNAME=.*/HOSTNAME={{hostname}}/g' /etc/sysconfig/network
+
+# setup OS IP
+
+## make sure enable network
+sed -i 's/^NETWORKING=.*/NETWORKING=yes/g' /etc/sysconfig/network
+sed -i 's/^BOOTPROTO=.*/BOOTPROTO=none/g' /etc/sysconfig/network-scripts/ifcfg-eth*
+sed -i 's/^ONBOOT=.*/ONBOOT=yes/g' /etc/sysconfig/network-scripts/ifcfg-eth*
+
+## disable NetworkManager control on all devices
+sed -i 's/^NM_CONTROLLED=.*/NM_CONTROLLED=no/g' /etc/sysconfig/network-scripts/ifcfg-eth*
+
+## config OS IP on access port
+sed -i 's/^BOOTPROTO=.*/BOOTPROTO=static/g' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+
+grep -q -P '^MTU=' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}  || echo "MTU=1500" >> /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+sed -i 's/^MTU=.*/MTU=1500/g' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+
+grep -q -P '^IPADDR=' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}  || echo "IPADDR={{osip}}" >> /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+sed -i 's/^IPADDR=.*/IPADDR={{osip}}/g' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+
+grep -q -P '^NETMASK=' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}  || echo "NETMASK={{osnetmask}}" >> /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+sed -i 's/^NETMASK=.*/NETMASK={{osnetmask}}/g' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+
+grep -q -P '^GATEWAY=' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}  || echo "GATEWAY={{osgw}}" >> /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+sed -i 's/^GATEWAY=.*/GATEWAY={{osgw}}/g' /etc/sysconfig/network-scripts/ifcfg-{{access_port}}
+
+# enable root remote login
+grep -q -P '^PermitRootLogin no' /etc/ssh/sshd_config  || echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
+
+# restart servers
+service network restart
+service sshd restart

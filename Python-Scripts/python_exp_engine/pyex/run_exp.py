@@ -2,15 +2,31 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import logging
+import os
 from Queue import Queue
+
+from jinja2 import TemplateNotFound
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars import VariableManager
 from ansible.inventory import Inventory
 
 
-def render_expect_file():
-    pass
+def render_expect_file(host_info, template):
+    logging.debug("render commands for %s, %s" % (host_info.get("name"), template))
+    path, file_name = os.path.split(template)
+    path = os.path.abspath(path)
+    try:
+        template_file = Environment(loader=FileSystemLoader(path or "./")).get_template(file_name)
+        commands = template_file.render(host_info)
+        return commands
+    except TemplateNotFound:
+        logging.error("%s cannot find template file %s" % (host_info.get("name"), template))
+
+    return None
 
 
 def run_expect():
@@ -73,7 +89,10 @@ def main(host="hosts", section="all", template=None):
     host_list = extract_hosts(inventory, section)
 
     for h in host_list:
-        print h
+        logging.info("to run %s ..." % h['name'])
+        commands = render_expect_file(h, template)
+        print commands
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Python Expect Template Engine')
@@ -104,8 +123,8 @@ if __name__ == "__main__":
                         "--template",
                         dest="template",
                         help="jinjia template file to generate expect commands",
-                        const="template/main.j2",
-                        default="tempate/main.j2",
+                        const="templates/main.j2",
+                        default="templates/main.j2",
                         action="store_const")
     args = parser.parse_args()
     main(args.hosts, args.group, args.template)
